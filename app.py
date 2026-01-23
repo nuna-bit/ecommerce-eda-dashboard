@@ -95,42 +95,29 @@ with row2_col2:
     st.info("Peak activity occurs between 10 AM and 10 PM.")
 
 # Insight 5 (Full Width)
-# Insight 5 (Full Width)
 st.subheader("5. Product Category Cancellation Rates")
 
-# 1. Standardize status to lowercase to avoid matching errors
-filtered_df['order_status'] = filtered_df['order_status'].astype(str).str.lower()
+# 1. Filter specifically for canceled orders
+canceled_orders = filtered_df[filtered_df['order_status'] == 'canceled']
 
-# 2. Filter for canceled orders
-canceled_df = filtered_df[filtered_df['order_status'] == 'canceled']
+if not canceled_orders.empty:
+    # 2. Count cancellations per category
+    cat_cancel = canceled_orders.groupby('category').size().reset_index(name='count')
+    cat_cancel = cat_cancel.sort_values('count', ascending=False).head(10)
 
-if not canceled_df.empty:
-    # 3. Count occurrences of each category
-    # Ensure we use 'category' (or the correct column name from your merge)
-    cat_counts = canceled_df['category'].value_counts().reset_index()
-    cat_counts.columns = ['Category', 'Cancellations']
-    
-    # 4. Take the Top 10 to keep the chart readable
-    top_10_canceled = cat_counts.head(10)
-
-    # 5. Create the chart
+    # 3. Create the Pie Chart
     fig5 = px.pie(
-        top_10_canceled, 
-        values='Cancellations', 
-        names='Category', 
-        title="Top 10 Canceled Categories",
-        hole=0.4,
-        color_discrete_sequence=px.colors.sequential.RdBu
+        cat_cancel, 
+        values='count', 
+        names='category', 
+        title="Top 10 Categories by Total Cancellations",
+        hole=0.4 # This makes it a Donut chart (cleaner look)
     )
-    
-    # Clean up the layout
-    fig5.update_traces(textposition='inside', textinfo='percent+label')
     st.plotly_chart(fig5, width='stretch')
-    
-    st.info("Insight: This chart shows the distribution of cancellations across different product types.")
+    st.info("Insight: Most cancellations occur in high-volume or high-sensitivity categories like Perfumery.")
 else:
-    st.warning("No 'canceled' orders found in the current selection. This may be due to the data sample or filters.")
-
+    st.warning("No canceled orders found for the selected states. Try adding more states in the sidebar!")
+    
 # Technical note
 st.divider()
 st.caption("Data Source: Olist Store Dataset (Kaggle) | Analysis conducted using Python, Pandas, and Plotly.")
