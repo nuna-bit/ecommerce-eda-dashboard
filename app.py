@@ -5,32 +5,35 @@ import plotly.express as px
 # 1. Page Configuration
 st.set_page_config(page_title="E-Commerce Insights Dashboard", layout="wide")
 
-# 2. Load Data
+# 2. Load Data Function (Defining how to get the data)
 @st.cache_data
 def load_data():
-    df = pd.read_csv('data/olist_sample.csv')
+    # Make sure this path matches your file name in the data folder exactly
+    df = pd.read_csv('data/olist_sample.csv') 
     
-    # Ensure dates are datetime objects
+    # Standardize date formats
     df['order_purchase_timestamp'] = pd.to_datetime(df['order_purchase_timestamp'])
     df['order_delivered_customer_date'] = pd.to_datetime(df['order_delivered_customer_date'])
     df['order_estimated_delivery_date'] = pd.to_datetime(df['order_estimated_delivery_date'])
     
-    # CALCULATE MISSING COLUMNS HERE
-    # This fixes the KeyError for shipping_ratio
+    # Calculate columns that were missing in the CSV
     df['shipping_ratio'] = df['freight_value'] / df['price']
-    
-    # This ensures Insight 1 works
     df['is_late'] = df['order_delivered_customer_date'] > df['order_estimated_delivery_date']
-    
-    # This ensures Insight 4 works
     df['purchase_hour'] = df['order_purchase_timestamp'].dt.hour
     
     return df
 
-# 3. Sidebar Navigation & Filters
+# --- CRITICAL: Call the function to create the 'df' variable BEFORE using it ---
+df = load_data() 
+
+# 3. Sidebar Navigation & Filters (Now 'df' is defined, so this won't crash)
 st.sidebar.title("Dashboard Filters")
 st.sidebar.markdown("Filter the data to see specific trends.")
-states = st.sidebar.multiselect("Select States", options=sorted(df['customer_state'].unique()), default=df['customer_state'].unique()[:5])
+states = st.sidebar.multiselect(
+    "Select States", 
+    options=sorted(df['customer_state'].unique()), 
+    default=df['customer_state'].unique()[:5]
+)
 
 # Filter dataframe based on selection
 filtered_df = df[df['customer_state'].isin(states)]
@@ -53,7 +56,7 @@ col3.metric("Avg. Delivery Time", f"{avg_delivery:.1f} Days")
 
 st.divider()
 
-# 6. The 5 Insights Section
+# 6. Strategic Business Insights
 st.header("Strategic Business Insights")
 
 # Insight 1 & 2 in columns
@@ -61,9 +64,8 @@ row1_col1, row1_col2 = st.columns(2)
 
 with row1_col1:
     st.subheader("1. Late Delivery vs. Satisfaction")
-    # Check if 'is_late' was saved, otherwise recalculate
     fig1 = px.box(filtered_df, x="is_late", y="review_score", color="is_late",
-                 title="Impact of Delays on Reviews")
+                  title="Impact of Delays on Reviews")
     st.plotly_chart(fig1, width='stretch')
     st.info("Insight: Late deliveries correlate with a ~40% drop in review scores.")
 
@@ -71,7 +73,7 @@ with row1_col2:
     st.subheader("2. Payment Method Spending")
     payment_data = filtered_df.groupby('payment_type')['payment_value'].mean().reset_index()
     fig2 = px.bar(payment_data, x='payment_type', y='payment_value', 
-                 title="Avg. Spend per Payment Type")
+                  title="Avg. Spend per Payment Type")
     st.plotly_chart(fig2, width='stretch')
     st.info("Insight: Credit card and Boleto users have similar purchasing power.")
 
@@ -80,7 +82,6 @@ row2_col1, row2_col2 = st.columns(2)
 
 with row2_col1:
     st.subheader("3. Regional Shipping 'Tax'")
-    # Shipping ratio by state
     state_shipping = filtered_df.groupby('customer_state')['shipping_ratio'].mean().reset_index().sort_values('shipping_ratio', ascending=False)
     fig3 = px.bar(state_shipping, x='customer_state', y='shipping_ratio', title="Shipping-to-Price Ratio by State")
     st.plotly_chart(fig3, width='stretch')
