@@ -104,27 +104,6 @@ with row2_col2:
     st.plotly_chart(fig4, use_container_width=True)
     st.info("**Insight:** Peak shopping occurs between 10:00 and 21:00. Marketing campaigns and customer support staff should be concentrated in this window.")
 
-# --- Row 3: Cancellations (Full Width) ---
-st.divider()
-st.subheader("5. Product Category Cancellation Rates")
-
-canceled_df = filtered_df[filtered_df['order_status'] == 'canceled']
-
-if not canceled_df.empty:
-    cat_cancel = canceled_df['category'].value_counts().reset_index().head(10)
-    cat_cancel.columns = ['category', 'count']
-    
-    # Horizontal Bar Chart for better label readability
-    fig5 = px.bar(cat_cancel, x='count', y='category', orientation='h',
-                  title="Top 10 Canceled Categories",
-                  labels={'count': 'Number of Cancellations'})
-    fig5.update_traces(marker_color=MAIN_BLUE)
-    fig5.update_layout(yaxis={'categoryorder':'total ascending'})
-    st.plotly_chart(fig5, use_container_width=True)
-    st.info("**Insight:** High cancellations in specific categories often signal inaccurate product descriptions or size guides. Review the top listed categories for quality control.")
-else:
-    st.info("No canceled orders found for the current selection. This indicates healthy operational performance in these states.")
-
 # Footer
 st.divider()
 st.caption("Data Source: Olist Store Dataset | Analysis conducted with Python, Pandas, and Plotly.")
