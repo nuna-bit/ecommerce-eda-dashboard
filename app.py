@@ -85,7 +85,8 @@ with row2_col1:
     state_shipping = filtered_df.groupby('customer_state')['shipping_ratio'].mean().reset_index().sort_values('shipping_ratio', ascending=False)
     fig3 = px.bar(state_shipping, x='customer_state', y='shipping_ratio', title="Shipping-to-Price Ratio by State")
     st.plotly_chart(fig3, width='stretch')
-
+    st.info("Customers in the North and Northeast regions (like RO and RR) are paying a 'Geography Tax.'")
+    
 with row2_col2:
     st.subheader("4. Hourly Order Volume")
     hourly_data = filtered_df.groupby('purchase_hour')['order_id'].nunique().reset_index()
@@ -94,28 +95,41 @@ with row2_col2:
     st.info("Peak activity occurs between 10 AM and 10 PM.")
 
 # Insight 5 (Full Width)
+# Insight 5 (Full Width)
 st.subheader("5. Product Category Cancellation Rates")
 
-# 1. Filter specifically for canceled orders
-canceled_orders = filtered_df[filtered_df['order_status'] == 'canceled']
+# 1. Standardize status to lowercase to avoid matching errors
+filtered_df['order_status'] = filtered_df['order_status'].astype(str).str.lower()
 
-if not canceled_orders.empty:
-    # 2. Count cancellations per category
-    cat_cancel = canceled_orders.groupby('category').size().reset_index(name='count')
-    cat_cancel = cat_cancel.sort_values('count', ascending=False).head(10)
+# 2. Filter for canceled orders
+canceled_df = filtered_df[filtered_df['order_status'] == 'canceled']
 
-    # 3. Create the Pie Chart
+if not canceled_df.empty:
+    # 3. Count occurrences of each category
+    # Ensure we use 'category' (or the correct column name from your merge)
+    cat_counts = canceled_df['category'].value_counts().reset_index()
+    cat_counts.columns = ['Category', 'Cancellations']
+    
+    # 4. Take the Top 10 to keep the chart readable
+    top_10_canceled = cat_counts.head(10)
+
+    # 5. Create the chart
     fig5 = px.pie(
-        cat_cancel, 
-        values='count', 
-        names='category', 
-        title="Top 10 Categories by Total Cancellations",
-        hole=0.4 # This makes it a Donut chart (cleaner look)
+        top_10_canceled, 
+        values='Cancellations', 
+        names='Category', 
+        title="Top 10 Canceled Categories",
+        hole=0.4,
+        color_discrete_sequence=px.colors.sequential.RdBu
     )
+    
+    # Clean up the layout
+    fig5.update_traces(textposition='inside', textinfo='percent+label')
     st.plotly_chart(fig5, width='stretch')
-    st.info("Insight: Most cancellations occur in high-volume or high-sensitivity categories like Perfumery.")
+    
+    st.info("Insight: This chart shows the distribution of cancellations across different product types.")
 else:
-    st.warning("No canceled orders found for the selected states. Try adding more states in the sidebar!")
+    st.warning("No 'canceled' orders found in the current selection. This may be due to the data sample or filters.")
 
 # Technical note
 st.divider()
