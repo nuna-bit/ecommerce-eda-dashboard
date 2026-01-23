@@ -95,6 +95,29 @@ with row2_col2:
 
 # Insight 5 (Full Width)
 st.subheader("5. Product Category Cancellation Rates")
-cat_cancel = filtered_df[filtered_df['order_status'] == 'canceled'].groupby('category').size().reset_index(name='count').sort_values('count', ascending=False).head(10)
-fig5 = px.pie(cat_cancel, values='count', names='category', title="Top Categories for Cancellations")
-st.plotly_chart(fig5, width='stretch')
+
+# 1. Filter specifically for canceled orders
+canceled_orders = filtered_df[filtered_df['order_status'] == 'canceled']
+
+if not canceled_orders.empty:
+    # 2. Count cancellations per category
+    cat_cancel = canceled_orders.groupby('category').size().reset_index(name='count')
+    cat_cancel = cat_cancel.sort_values('count', ascending=False).head(10)
+
+    # 3. Create the Pie Chart
+    fig5 = px.pie(
+        cat_cancel, 
+        values='count', 
+        names='category', 
+        title="Top 10 Categories by Total Cancellations",
+        hole=0.4 # This makes it a Donut chart (cleaner look)
+    )
+    st.plotly_chart(fig5, width='stretch')
+    st.info("Insight: Most cancellations occur in high-volume or high-sensitivity categories like Perfumery.")
+else:
+    st.warning("No canceled orders found for the selected states. Try adding more states in the sidebar!")
+
+# Technical note
+st.divider()
+st.caption("Data Source: Olist Store Dataset (Kaggle) | Analysis conducted using Python, Pandas, and Plotly.")
+
